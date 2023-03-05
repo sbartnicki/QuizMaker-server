@@ -25,7 +25,7 @@ router.post('/login', async (req, res) => {
     const quizzes = await Quiz.find({ ownerId: user._id });
     res.send(quizzes);
   } else {
-    res.send('Wrong password');
+    res.status(401).send('Wrong password!');
   }
 });
 
