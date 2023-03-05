@@ -1,5 +1,6 @@
 const router = require('express').Router();
-const User = require('../models/user');
+const { User, validateUser } = require('../models/user');
+const { Quiz } = require('../models/quiz');
 
 router.get('/', async (req, res) => {
   const users = await User.find();
@@ -15,17 +16,34 @@ router.get('/:id', async (req, res) => {
   res.send(user);
 });
 
+router.post('/login', async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user)
+    return res.status(400).send("User with given e-mail doesn't exist");
+
+  if (user.password === req.body.password) {
+    const quizzes = await Quiz.find({ ownerId: user._id });
+    res.send(quizzes);
+  } else {
+    res.send('Wrong password');
+  }
+});
+
 router.post('/', async (req, res) => {
-  let user = new User({
-    name: req.body.name,
+  const { error } = validateUser(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  let user = await User.findOne({ email: req.body.email });
+  if (user) return res.status(400).send('User already registered');
+
+  user = new User({
     email: req.body.email,
     password: req.body.password,
-    creator: req.body.creator,
   });
 
   user = await user.save();
 
-  res.send(user);
+  res.send({ user, message: 'User registered.' });
 });
 
 router.put('/:id', async (req, res) => {

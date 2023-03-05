@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const Quiz = require('../models/quiz');
+const { Quiz, validateQuiz } = require('../models/quiz');
 
 router.get('/', async (req, res) => {
   const quizzes = await Quiz.find();
@@ -16,9 +16,13 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+  const { error } = validateQuiz(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
   let quiz = new Quiz({
     title: req.body.title,
     ownerId: req.body.ownerId,
+    questions: req.body.questions,
   });
 
   quiz = await quiz.save();
