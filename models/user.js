@@ -1,11 +1,19 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+const privateKey = process.env.JWT_PRIVATE_KEY;
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  creator: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: false },
 });
+
+userSchema.methods.generateAuthToken = function () {
+  const token = jwt.sign({ _id: this._id }, privateKey);
+  return token;
+};
 
 const User = mongoose.model('User', userSchema);
 

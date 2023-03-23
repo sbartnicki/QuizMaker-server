@@ -1,51 +1,44 @@
 const router = require('express').Router();
 const { User, validateUser } = require('../models/user');
-const { Quiz } = require('../models/quiz');
+const VerifyToken = require('../models/verifyToken');
 const { sendEmail, validateEmail } = require('../services/email');
+const bcrypt = require('bcrypt');
+const auth = require('../middlewares/auth');
+const crypto = require('crypto');
+const { isValidObjectId } = require('mongoose');
 
-router.get('/', async (req, res) => {
-  const users = await User.find();
-
-  res.send(users);
-});
-
-router.get('/:id', async (req, res) => {
-  const user = await User.findById(req.params.id);
-
-  if (!user) return res.status(404).send("User with given ID doesn't exist");
-
+// Route so user can get his data
+router.get('/me', auth, async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
   res.send(user);
 });
 
-router.post('/passwordreset', async (req, res) => {
-  const { error } = validateEmail(req.body);
-  if (error) return res.status(400).send(error.details[0].message);
+// Route for verifying user after clicking confirmation email
+router.post('/verify', async (req, res) => {
+  const objectId = isValidObjectId(req.body.userId);
+  if (!objectId) {
+    return res.status(400).send('Invalid object id');
+  }
+  const token = await VerifyToken.findOne({ userId: req.body.userId });
+  if (!token) return res.status(400).send('Invalid email verification token');
 
-  const user = await User.findOne({ email: req.body.email });
-  if (!user)
-    return res.status(400).send("User with given e-mail doesn't exist");
+  const isValid = await bcrypt.compare(req.body.token, token.token);
+  if (!isValid) return res.status(400).send('Invalid email verification token');
 
-  await sendEmail(req.body.email)
-    .then(() => res.send('Email Sent'))
-    .catch((err) => res.status(400).send(err.message));
-});
+  console.log('passed');
+  const user = await User.findOneAndUpdate(
+    { _id: token.userId },
+    { $set: { isActive: true } },
+    { returnNewDocument: true }
+  );
 
-router.post('/login', async (req, res) => {
-  const { error } = validateUser(req.body);
-  if (error) return res.status(400).send(error.details[0].message);
-
-  const user = await User.findOne({ email: req.body.email });
-  if (!user)
-    return res.status(400).send("User with given e-mail doesn't exist");
-
-  if (user.password === req.body.password) {
-    const quizzes = await Quiz.find({ ownerId: user._id });
-    res.send(quizzes);
-  } else {
-    res.status(401).send('Wrong password!');
+  if (user) {
+    res.send('Email confirmed!');
+    token.deleteOne();
   }
 });
 
+// User registration, returns token in the header and details in body
 router.post('/', async (req, res) => {
   const { error } = validateUser(req.body);
   if (error) return res.status(400).send(error.details[0].message);
@@ -57,11 +50,32 @@ router.post('/', async (req, res) => {
     email: req.body.email,
     password: req.body.password,
   });
+  // Hashing the password before saving the user to the DB
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(user.password, salt);
 
   user = await user.save();
+  const token = user.generateAuthToken();
 
-  await sendEmail(req.body.email, true) // Set second parameter to true if this is confirmation email
-    .then(() => res.send('User registered. Confirmation email sent.'))
+  // Generating  verification token
+  const verifyToken = await new VerifyToken({
+    userId: user._id,
+    token: crypto.randomBytes(32).toString('hex'),
+  });
+
+  const link = `https://quiz-maker-two.vercel.app/verify/${verifyToken.token}/${verifyToken.userId}`;
+
+  verifyToken.token = await bcrypt.hash(verifyToken.token, salt);
+  await verifyToken.save();
+
+  await sendEmail(req.body.email, link, true) // Set second parameter to true if this is confirmation email
+    .then(() =>
+      res.header('x-auth-token', token).send({
+        message: 'User registered. Confirmation email sent.',
+        email: user.email,
+        id: user._id,
+      })
+    )
     .catch((err) => res.status(400).send(err.message));
 });
 

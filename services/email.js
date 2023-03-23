@@ -3,7 +3,7 @@ const Joi = require('joi');
 require('dotenv').config();
 const emailPass = process.env.EMAIL_PASS;
 
-async function sendEmail(email, confirmation) {
+async function sendEmail(email, link, confirmation) {
   // create reusable transporter object
   let transporter = nodemailer.createTransport({
     service: 'hotmail',
@@ -17,8 +17,8 @@ async function sendEmail(email, confirmation) {
     from: '"QUIZ Maker" <quizmakerproject@outlook.com>',
     to: email,
     subject: 'Quiz Maker Forgotten password link',
-    text: 'Here is a link to your password reset FAKE LINK (to update in SPRINT 2)',
-    html: '<b>Here is a link to your password reset FAKE LINK (to update in SPRINT 2)</b>',
+    text: `Here is a link to your password reset ${link}`,
+    html: `<b>Here is a link to your password reset <a href='${link}'>Click Here</a></b>`,
   };
 
   if (confirmation) {
@@ -26,8 +26,8 @@ async function sendEmail(email, confirmation) {
       from: '"QUIZ Maker" <quizmakerproject@outlook.com>',
       to: email,
       subject: 'Quiz Maker - Please confirm your account',
-      text: 'Please click the below link to confirm your account FAKE LINK (to update in SPRINT 2)',
-      html: '<b>Please click the below link to confirm your account FAKE LINK (to update in SPRINT 2)</b>',
+      text: `Please click the below link to confirm your account ${link}`,
+      html: `<b>Please click the below link to confirm your account <a href='${link}'>Click Here</a></b>`,
     };
   }
 

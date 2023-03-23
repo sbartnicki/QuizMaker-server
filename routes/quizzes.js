@@ -1,13 +1,14 @@
 const router = require('express').Router();
 const { Quiz, validateQuiz } = require('../models/quiz');
+const auth = require('../middlewares/auth');
 
-router.get('/', async (req, res) => {
-  const quizzes = await Quiz.find();
+router.get('/', auth, async (req, res) => {
+  const quizzes = await Quiz.find({ ownerId: req.user._id });
 
   res.send(quizzes);
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   const quiz = await Quiz.findById(req.params.id);
 
   if (!quiz) return res.send('There is no quiz with such ID');
