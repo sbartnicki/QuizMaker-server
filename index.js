@@ -17,11 +17,15 @@ mongoose
   .then(() => console.log('Connected to MongoDB...'))
   .catch((err) => console.log(err.message));
 
-app.use(cors());
+const corsOptions = {
+  exposedHeaders: 'x-auth-token',
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api/users', users);
-app.use('/api/quizzes', quizzes); 
-app.use('/api/answers', quizzesUserAnswers);// LUIZ
+app.use('/api/quizzes', quizzes);
+app.use('/api/answers', quizzesUserAnswers); // LUIZ
 app.use('/api/auth', auth);
 app.use('/api/resets', resets);
 
