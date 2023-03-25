@@ -13,7 +13,7 @@ const Quiz = mongoose.model('Quiz', quizSchema);
 function validateQuiz(quiz) {
   const question = Joi.object().keys({
     type: Joi.string().valid('tf', 'mc').required(),
-    question: Joi.string().min(5),
+    question: Joi.string().min(1),
     options: Joi.array().items(
       Joi.object().keys({
         text: Joi.string().required(),
@@ -26,7 +26,7 @@ function validateQuiz(quiz) {
       .required()
       .regex(/^[0-9a-fA-F]{24}$/),
     created: Joi.date(),
-    title: Joi.string().min(5),
+    title: Joi.string().min(1),
     questions: Joi.array().items(question),
   });
 
