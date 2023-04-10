@@ -23,6 +23,7 @@ router.post('/', async (req, res) => {
   let quiz = new Quiz({
     title: req.body.title,
     ownerId: req.body.ownerId,
+    draft: req.body.draft,
     questions: req.body.questions,
   });
 
