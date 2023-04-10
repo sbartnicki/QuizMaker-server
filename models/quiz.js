@@ -6,7 +6,7 @@ const quizSchema = new mongoose.Schema({
   created: { type: Date, default: Date.now },
   title: { type: String, required: true },
   questions: [Object],
-  draft: { type: boolean, required: false },
+  draft: { type: Boolean, required: false },
 });
 
 const Quiz = mongoose.model('Quiz', quizSchema);
