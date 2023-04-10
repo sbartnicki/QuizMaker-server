@@ -6,6 +6,7 @@ const quizSchema = new mongoose.Schema({
   created: { type: Date, default: Date.now },
   title: { type: String, required: true },
   questions: [Object],
+  draft: { type: boolean, required: false },
 });
 
 const Quiz = mongoose.model('Quiz', quizSchema);
@@ -14,6 +15,7 @@ function validateQuiz(quiz) {
   const question = Joi.object().keys({
     type: Joi.string().valid('tf', 'mc').required(),
     question: Joi.string().min(1),
+    draft: Joi.boolean(),
     options: Joi.array().items(
       Joi.object().keys({
         text: Joi.string().required(),
