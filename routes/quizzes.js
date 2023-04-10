@@ -35,7 +35,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const quiz = await Quiz.findByIdAndUpdate(
     req.params.id,
-    { title: req.body.title, questions: req.body.questions },
+    {
+      title: req.body.title,
+      draft: req.body.draft,
+      questions: req.body.questions,
+    },
     { new: true }
   );
 
